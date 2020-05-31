@@ -34,7 +34,7 @@
    * changes will persist across user script updates.
    *
    * In Violentmonkey:
-   * 1. Install the script.
+   * 1. Install the user script.
    * 2. Let the script run at least once by loading an applicable url.
    * 3. Click the edit button for this script from the Violentmonkey menu.
    * 4. Click on the "Values" tab for this script.
@@ -44,7 +44,7 @@
    * 7. Refresh or visit the page to see the changes.
    *
    * In TamperMonkey:
-   * 1. Install the script.
+   * 1. Install the user script.
    * 2. Let the script run at least once by loading an applicable url.
    * 3. From the TamperMonkey dashboard, click the "Settings" tab.
    * 4. Change the "Config mode" mode to "Advanced".
@@ -375,7 +375,7 @@
         utils.groupError(
           message,
           `Request failed with status ${res.status}`,
-          ...(res.response ? res.response.errors : [])
+          ...(res.response ? res.response.errors : [res])
         );
         throw new Error(message);
       }
@@ -405,7 +405,7 @@
         utils.groupError(
           message,
           `Request failed with status ${res.status}`,
-          ...(res.response ? res.response.errors : [])
+          res.response ? res.response.error || res.response.message : res
         );
         throw new Error(message);
       }

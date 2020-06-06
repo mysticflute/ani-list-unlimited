@@ -377,7 +377,9 @@
           `Request failed with status ${res.status}`,
           ...(res.response ? res.response.errors : [res])
         );
-        throw new Error(message);
+        const error = new Error(message);
+        error.response = res;
+        throw error;
       }
     },
 
@@ -407,7 +409,9 @@
           `Request failed with status ${res.status}`,
           res.response ? res.response.error || res.response.message : res
         );
-        throw new Error(message);
+        const error = new Error(message);
+        error.response = res;
+        throw error;
       }
     },
 
@@ -472,7 +476,9 @@
           `Request failed with status ${res.status}`,
           ...(res.response ? res.response.errors : [])
         );
-        throw new Error(message);
+        const error = new Error(message);
+        error.response = res;
+        throw error;
       }
     },
   };
@@ -641,6 +647,17 @@
           utils.error(
             `Unable to add the ${source} score to the header: ${e.message}`
           );
+
+          // https://github.com/jikan-me/jikan-rest/issues/102
+          if (e.response && e.response.status === 403) {
+            return this.addToHeader({
+              slot,
+              source,
+              score: 'Unavailable',
+              info:
+                ' (temporarily unavailable since MAL is limiting API requests due to their performance issues)',
+            });
+          }
         });
     }
 

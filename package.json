@@ -1,6 +1,6 @@
 {
   "name": "ani-list-unlimited",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A collection of user scripts for anilist.co",
   "author": "mysticflute",
   "homepage": "https://github.com/mysticflute/ani-list-unlimited",
@@ -12,7 +12,11 @@
     "url": "https://github.com/mysticflute/ani-list-unlimited/issues"
   },
   "keywords": [
-    "userscript", "anime", "anilist", "myanimelist", "kitsu"
+    "userscript",
+    "anime",
+    "anilist",
+    "myanimelist",
+    "kitsu"
   ],
   "license": "MIT",
   "scripts": {},

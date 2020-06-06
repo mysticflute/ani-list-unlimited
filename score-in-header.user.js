@@ -724,6 +724,7 @@
         while (slotEl.lastChild) {
           slotEl.removeChild(slotEl.lastChild);
         }
+        slotEl.style.marginRight = '0';
       }
     }
 

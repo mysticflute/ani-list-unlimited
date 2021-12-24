@@ -66,19 +66,26 @@
    *    your changes again.
    */
   const defaultConfig = {
-    /** If true, adds the AniList average score to the header. */
+    /** When true, adds the AniList average score to the header. */
     addAniListScoreToHeader: true,
 
-    /** If true, show the smile/neutral/frown icons next to the AniList score. */
-    showIconWithAniListScore: true,
-
-    /** If true, adds the MyAnimeList score to the header. */
+    /** When true, adds the MyAnimeList score to the header. */
     addMyAnimeListScoreToHeader: true,
 
-    /** If true, adds the Kitsu score to the header. */
+    /** When true, adds the Kitsu score to the header. */
     addKitsuScoreToHeader: false,
 
-    /** If true, shows loading indicators when scores are being retrieved. */
+    /** When true, show the smile/neutral/frown icons next to the AniList score. */
+    showIconWithAniListScore: true,
+
+    /**
+     * When true, show AniList's "Mean Score" instead of the "Average Score".
+     * Regardless of this value, if the "Average Score" is not available
+     * then the "Mean Score" will be shown.
+     */
+    preferAniListMeanScore: false,
+
+    /** When true, shows loading indicators when scores are being retrieved. */
     showLoadingIndicators: true,
   };
 
@@ -419,17 +426,22 @@
      * Loads data from the Kitsu API.
      *
      * @param {('anime'|'manga')} type - The type of media content.
-     * @param {string} title - Search for media with this title.
+     * @param {string} englishTitle - Search for media with this title.
+     * @param {string} romajiTitle - Search for media with this title.
      *
      * @returns {Promise<Object>} A Promise returning the media's data, or a
      * rejection if there was a problem calling the API.
      */
-    async loadKitsuData(type, title) {
+    async loadKitsuData(type, englishTitle, romajiTitle) {
       try {
         const fields = 'slug,averageRating,userCount,titles';
         const response = await utils.xhr({
           url: encodeURI(
-            `${constants.KITSU_API}/${type}?page[limit]=3&fields[${type}]=${fields}&filter[text]=${title}`
+            `${
+              constants.KITSU_API
+            }/${type}?page[limit]=3&fields[${type}]=${fields}&filter[text]=${
+              englishTitle || romajiTitle
+            }`
           ),
           method: 'GET',
           headers: {
@@ -442,35 +454,44 @@
 
         if (response.data && response.data.length) {
           let index = 0;
+          let isExactMatch = false;
 
-          if (response.data.length > 1) {
-            const collator = new Intl.Collator({
-              usage: 'search',
-              sensitivity: 'base',
-              ignorePunctuation: true,
-            });
+          const collator = new Intl.Collator({
+            usage: 'search',
+            sensitivity: 'base',
+            ignorePunctuation: true,
+          });
 
-            const matchedIndex = response.data.findIndex(result => {
-              return Object.values(result.attributes.titles).find(
-                kitsuTitle => collator.compare(title, kitsuTitle) === 0
+          const matchedIndex = response.data.findIndex(result => {
+            return Object.values(result.attributes.titles).find(kitsuTitle => {
+              return (
+                collator.compare(englishTitle, kitsuTitle) === 0 ||
+                collator.compare(romajiTitle, kitsuTitle) === 0
               );
             });
+          });
 
-            if (matchedIndex > -1) {
-              utils.debug(
-                `matched title for Kitsu result at index ${matchedIndex}`,
-                response.data[index]
-              );
-              index = matchedIndex;
-            }
+          if (matchedIndex > -1) {
+            utils.debug(
+              `matched title for Kitsu result at index ${matchedIndex}`,
+              response.data[index]
+            );
+            index = matchedIndex;
+            isExactMatch = true;
+          } else {
+            utils.debug('exact title match not found in Kitsu results');
           }
 
-          return response.data[index].attributes;
+          return {
+            isExactMatch,
+            data: response.data[index].attributes,
+          };
         } else {
-          return {}; // if search did not find anything
+          utils.debug(`Kitsu API returned 0 results for '${englishTitle}'`);
+          return {};
         }
       } catch (res) {
-        const message = `Kitsu API request failed for text '${title}'`;
+        const message = `Kitsu API request failed for text '${englishTitle}'`;
         utils.groupError(
           message,
           `Request failed with status ${res.status}`,
@@ -592,7 +613,19 @@
     async addAniListScoreToHeader(pageType, mediaId, aniListData) {
       const slot = 1;
       const source = 'AniList';
-      const rawScore = aniListData.averageScore || aniListData.meanScore;
+
+      let rawScore, info;
+      if (
+        aniListData.meanScore &&
+        (this.config.preferAniListMeanScore || !aniListData.averageScore)
+      ) {
+        rawScore = aniListData.meanScore;
+        info = ' (mean)';
+      } else if (aniListData.averageScore) {
+        rawScore = aniListData.averageScore;
+        info = ' (average)';
+      }
+
       const score = rawScore ? `${rawScore}%` : '(N/A)';
 
       let iconMarkup;
@@ -608,7 +641,7 @@
         }
       }
 
-      this.addToHeader({ slot, source, score, iconMarkup }).catch(e => {
+      this.addToHeader({ slot, source, score, iconMarkup, info }).catch(e => {
         utils.error(
           `Unable to add the ${source} score to the header: ${e.message}`
         );
@@ -654,8 +687,15 @@
               slot,
               source,
               score: 'Unavailable',
-              info:
-                ' (temporarily unavailable since MAL is limiting API requests due to their performance issues)',
+              info: ': Temporarily unavailable since MAL is limiting API requests due to their performance issues',
+            });
+          } else if (e.response && e.response.status === 429) {
+            // rate limited
+            return this.addToHeader({
+              slot,
+              source,
+              score: 'Unavailable*',
+              info: ': Temporarily unavailable due to rate-limiting, since you made too many requests to the MyAnimeList API. Reload in a few seconds to try again',
             });
           }
         });
@@ -672,8 +712,9 @@
       const slot = 3;
       const source = 'Kitsu';
 
-      const title = aniListData.title.english || aniListData.title.romaji;
-      if (!title) {
+      const englishTitle = aniListData.title.english;
+      const romajiTitle = aniListData.title.romaji;
+      if (!englishTitle && !romajiTitle) {
         utils.error(
           `Unable to search ${source} - no media title found for ${mediaId}`
         );
@@ -685,12 +726,31 @@
       }
 
       api
-        .loadKitsuData(pageType, title)
-        .then(data => {
-          const score = data.averageRating ? `${data.averageRating}%` : null;
+        .loadKitsuData(pageType, englishTitle, romajiTitle)
+        .then(entry => {
+          if (!entry.data) {
+            utils.error(`no ${source} matches found for media ${mediaId}`);
+            return this.clearHeaderSlot(slot);
+          }
+
+          const data = entry.data;
+
+          let score = null;
+          if (data.averageRating !== undefined && data.averageRating !== null) {
+            score = `${data.averageRating}%`;
+            if (!entry.isExactMatch) {
+              score += '*';
+            }
+          }
+
           const href = `https://kitsu.io/${pageType}/${data.slug}`;
+
+          let info = '';
+          if (!entry.isExactMatch) {
+            info += ', *exact match not found';
+          }
           const kitsuTitles = Object.values(data.titles).join(', ');
-          const info = `, matched on ${kitsuTitles}`;
+          info += `, matched on "${kitsuTitles}"`;
 
           return this.addToHeader({ slot, source, score, href, info });
         })

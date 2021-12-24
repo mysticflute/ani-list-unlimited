@@ -77,16 +77,17 @@ These screenshots show different configuration options.
 
 This script has several options that lets you change the behavior:
 
-- **`addAniListScoreToHeader`** - When true, shows the AniList score to the title section.
-- **`showIconWithAniListScore`** - When true, shows the smile/frown icon next to the AniList score.
+- **`addAniListScoreToHeader`** - When true, shows the AniList score next to the title section.
 - **`addMyAnimeListScoreToHeader`** - When true, adds the https://myanimelist.net score to the title section.
 - **`addKitsuScoreToHeader`** - When true, adds the https://kitsu.io score to the title section.
+- **`showIconWithAniListScore`** - When true, shows the smile/frown icon next to the AniList score.
+- **`preferAniListMeanScore`** - When true, show AniList's "Mean Score" instead of the "Average Score". Regardless of this value, if the "Average Score" is not available then the "Mean Score" will be shown.
 - **`showLoadingIndicators`** - When true, shows a spinner when external scores are being loaded.
 
 With Violentmonkey:
 
 1. Install the user script.
-2. Let the user script run at least once by loading an applicable url.
+2. Let the user script run at least once by loading an applicable url, such as an anime page on AniList.
 3. Click the edit button for this script from the Violentmonkey menu.
 4. Click on the "Values" tab for this script.
 5. Click on the configuration option you want to change and edit the value (change to true or false).
@@ -98,7 +99,7 @@ With Violentmonkey:
 With TamperMonkey:
 
 1. Install the user script.
-2. Let the user script run at least once by loading an applicable url.
+2. Let the user script run at least once by loading an applicable url, such as an anime page on AniList.
 3. From the TamperMonkey dashboard, click the "Settings" tab.
 4. Change the "Config mode" mode to "Advanced".
 5. On the "Installed userscripts" tab (dashboard), click the edit button for this script.

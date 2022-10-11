@@ -97,7 +97,7 @@
     ANI_LIST_API: 'https://graphql.anilist.co',
 
     /** Endpoint for the MyAnimeList API */
-    MAL_API: 'https://api.jikan.moe/v3',
+    MAL_API: 'https://api.jikan.moe/v4',
 
     /** Endpoint for the Kitsu API */
     KITSU_API: 'https://kitsu.io/api/edge',
@@ -408,7 +408,7 @@
         });
         utils.debug('MyAnimeList API response:', response);
 
-        return response;
+        return response.data;
       } catch (res) {
         const message = `MyAnimeList API request failed for mapped MyAnimeList ID '${myAnimeListId}'`;
         utils.groupError(
@@ -682,12 +682,12 @@
           );
 
           // https://github.com/jikan-me/jikan-rest/issues/102
-          if (e.response && e.response.status === 403) {
+          if (e.response && e.response.status === 503) {
             return this.addToHeader({
               slot,
               source,
               score: 'Unavailable',
-              info: ': Temporarily unavailable since MAL is limiting API requests due to their performance issues',
+              info: ': The Jikan API is temporarily unavailable. Please try again later',
             });
           } else if (e.response && e.response.status === 429) {
             // rate limited

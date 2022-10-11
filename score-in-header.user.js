@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          AniList Unlimited - Score in Header
 // @namespace     https://github.com/mysticflute
-// @version       1.0.2
+// @version       1.0.3
 // @description   For anilist.co, make manga and anime scores more prominent by moving them to the title.
 // @author        mysticflute
 // @homepageURL   https://github.com/mysticflute/ani-list-unlimited

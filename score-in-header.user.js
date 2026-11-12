@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name          AniList Unlimited - Score in Header
 // @namespace     https://github.com/mysticflute
-// @version       1.0.3
+// @version       1.0.4
 // @description   For anilist.co, make manga and anime scores more prominent by moving them to the title.
 // @author        mysticflute
 // @homepageURL   https://github.com/mysticflute/ani-list-unlimited
 // @supportURL    https://github.com/mysticflute/ani-list-unlimited/issues
 // @match         https://anilist.co/*
 // @connect       graphql.anilist.co
-// @connect       api.jikan.moe
+// @connect       api.tenrai.org
 // @connect       kitsu.io
 // @grant         GM_xmlhttpRequest
 // @grant         GM_setValue
@@ -97,7 +97,7 @@
     ANI_LIST_API: 'https://graphql.anilist.co',
 
     /** Endpoint for the MyAnimeList API */
-    MAL_API: 'https://api.jikan.moe/v4',
+    MAL_API: 'https://api.tenrai.org/v1',
 
     /** Endpoint for the Kitsu API */
     KITSU_API: 'https://kitsu.io/api/edge',
@@ -681,13 +681,12 @@
             `Unable to add the ${source} score to the header: ${e.message}`
           );
 
-          // https://github.com/jikan-me/jikan-rest/issues/102
           if (e.response && e.response.status === 503) {
             return this.addToHeader({
               slot,
               source,
               score: 'Unavailable',
-              info: ': The Jikan API is temporarily unavailable. Please try again later',
+              info: ': The Tenrai API is temporarily unavailable. Please try again later',
             });
           } else if (e.response && e.response.status === 429) {
             // rate limited
